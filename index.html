@@ -31,6 +31,7 @@
       font-size: 14px;
       box-sizing: border-box;
     }
+    /* radios/checkboxes should NOT be full width */
     input[type="radio"],
     input[type="checkbox"] {
       width: auto;
@@ -63,6 +64,7 @@
       color: #555;
     }
 
+    /* Likert: always vertical for reliability on all devices */
     .likert-list {
       display: flex;
       flex-direction: column;
@@ -88,7 +90,9 @@
 
   <p>Please answer the questions below and click on each venn diagram to place yourself.</p>
 
+  <!-- Netlify form -->
   <form name="lis-venn-form" method="POST" data-netlify="true">
+    <!-- Netlify bot field (spam protection) -->
     <input type="hidden" name="form-name" value="lis-venn-form" />
 
     <div>
@@ -121,6 +125,7 @@
       </div>
     </div>
 
+    <!-- Hidden fields for Venn coordinates -->
     <input type="hidden" id="diagramA_x" name="diagramA_x" />
     <input type="hidden" id="diagramA_y" name="diagramA_y" />
     <input type="hidden" id="diagramB_x" name="diagramB_x" />
@@ -129,8 +134,10 @@
     <div>
       <h3>Based on what you wanted from the BASc before joining, click anywhere on this diagram.</h3>
       <p class="hint">
-        Interdisciplinary = multiple and varied disciplines of knowledge<br>
-        Problems = relating to real-world issues of genuine personal interest and importance<br>
+        Interdisciplinary = multiple and varied disciplines of knowledge
+        <br>
+        Problems = relating to real-world issues of genuine personal interest and importance
+        <br>
         Methods = research and production techniques extracted from disciplines and applied beyond disciplinary borders
       </p>
       <div class="canvas-wrapper">
@@ -141,8 +148,10 @@
     <div>
       <h3>Based on what you have been taught in the BASc, click anywhere on this diagram.</h3>
       <p class="hint">
-        Interdisciplinary = multiple and varied disciplines of knowledge<br>
-        Problems = relating to real-world issues of genuine personal interest and importance<br>
+        Interdisciplinary = multiple and varied disciplines of knowledge
+        <br>
+        Problems = relating to real-world issues of genuine personal interest and importance
+        <br>
         Methods = research and production techniques extracted from disciplines and applied beyond disciplinary borders
       </p>
       <div class="canvas-wrapper">
@@ -158,25 +167,27 @@
   </form>
 
   <script>
+    // Load images onto canvases and handle clicks/taps
     function setupDiagram(canvasId, imgSrc, hiddenXId, hiddenYId) {
       const canvas = document.getElementById(canvasId);
       const ctx = canvas.getContext("2d");
       const img = new Image();
       img.src = imgSrc;
 
-      let relX = null;
-      let relY = null;
+      // Store last click as relative coordinates (0–1)
+      let lastRelX = null;
+      let lastRelY = null;
 
       function drawBase() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
       }
 
-      function drawMarker() {
-        if (relX === null || relY === null) return;
-        const x = relX * canvas.width;
-        const y = relY * canvas.height;
-        drawBase();
+      function drawMarkerFromRel() {
+        if (lastRelX === null || lastRelY === null) return;
+        const x = lastRelX * canvas.width;
+        const y = lastRelY * canvas.height;
+
         ctx.beginPath();
         ctx.arc(x, y, 7, 0, 2 * Math.PI);
         ctx.fillStyle = "red";
@@ -185,28 +196,47 @@
 
       function resizeAndDraw() {
         const rect = canvas.getBoundingClientRect();
-        const size = rect.width || 600;
+        const size = rect.width || 600; // assuming square image
 
         canvas.width = size;
         canvas.height = size;
 
-        drawMarker();
+        // Always draw base image
+        drawBase();
+        // Then draw marker if we have one
+        drawMarkerFromRel();
       }
 
       function handlePointer(e) {
         const rect = canvas.getBoundingClientRect();
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        let clientX, clientY;
 
-        relX = (clientX - rect.left) / rect.width;
-        relY = (clientY - rect.top) / rect.height;
+        if (e.touches && e.touches.length) {
+          clientX = e.touches[0].clientX;
+          clientY = e.touches[0].clientY;
+        } else {
+          clientX = e.clientX;
+          clientY = e.clientY;
+        }
 
+        // Position in element space (0–1)
+        const relX = (clientX - rect.left) / rect.width;
+        const relY = (clientY - rect.top) / rect.height;
+
+        lastRelX = relX;
+        lastRelY = relY;
+
+        // Save relative coordinates to hidden inputs (0–1 range)
         document.getElementById(hiddenXId).value = relX.toFixed(4);
         document.getElementById(hiddenYId).value = relY.toFixed(4);
 
-        drawMarker();
+        // Redraw image + marker at new position
+        resizeAndDraw();
 
-        if (e.cancelable) e.preventDefault();
+        // Prevent page scroll on touch
+        if (e.cancelable) {
+          e.preventDefault();
+        }
       }
 
       img.onload = () => {
@@ -218,6 +248,7 @@
       canvas.addEventListener("touchstart", handlePointer, { passive: false });
     }
 
+    // Initialise both diagrams (ensure venndiagram.png is in the same folder)
     setupDiagram("diagramA", "venndiagram.png", "diagramA_x", "diagramA_y");
     setupDiagram("diagramB", "venndiagram.png", "diagramB_x", "diagramB_y");
   </script>

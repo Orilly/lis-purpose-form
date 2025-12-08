@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>LIS Venn Diagram Survey</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 24px;
+      line-height: 1.5;
+    }
+    h1, h2, h3 {
+      font-weight: 600;
+    }
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+    label {
+      display: block;
+      margin-bottom: 4px;
+      font-weight: 500;
+    }
+    input, textarea {
+      width: 100%;
+      padding: 8px 10px;
+      font-size: 14px;
+      box-sizing: border-box;
+    }
+    textarea {
+      min-height: 80px;
+    }
+    .canvas-wrapper {
+      margin-top: 8px;
+      border: 1px solid #ddd;
+      display: inline-block;
+      position: relative;
+      max-width: 100%;
+    }
+    canvas {
+      display: block;
+      max-width: 100%;
+      height: auto;
+    }
+    button {
+      padding: 10px 16px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    .hint {
+      font-size: 13px;
+      color: #555;
+    }
+    .likert-group label {
+        margin: 0;
+        padding: 2px 0;
+        line-height: 1.2;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 15px;
+    }
+    .likert-horizontal {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 18px; /* spacing between each option */
+        margin-top: 8px;
+    }
+    .likert-horizontal label {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        white-space: nowrap;
+        font-size: 15px;
+    }
+  </style>
+</head>
+<body>
+  <h1>LIS BASc Venn Diagram Survey</h1>
+
+  <p>Please answer the questions below and click on each Venn diagram to place yourself.</p>
+
+  <!-- Netlify form -->
+  <form name="lis-venn-form" method="POST" data-netlify="true">
+    <!-- Netlify bot field (spam protection) -->
+    <input type="hidden" name="form-name" value="lis-venn-form" />
+
+    <div>
+      <label for="email">LIS Email</label>
+      <input id="email" name="email" type="email" required />
+    </div>
+
+    <div>
+      <label for="cohort">Cohort Year (Start)</label>
+      <input id="cohort" name="cohort" type="text" placeholder="e.g. 2023" required />
+    </div>
+
+    <div>
+      <label for="source">How did you hear about LIS?</label>
+      <input id="source" name="source" type="text" />
+    </div>
+
+<div>
+    <label>Current satisfaction with LIS</label>
+    <p class="hint">Please select one option.</p>
+
+    <div class="likert-horizontal">
+    <label><input type="radio" name="satisfaction" value="1" required> Very dissatisfied</label>
+    <label><input type="radio" name="satisfaction" value="2"> Dissatisfied</label>
+    <label><input type="radio" name="satisfaction" value="3"> Slightly dissatisfied</label>
+    <label><input type="radio" name="satisfaction" value="4"> Neutral</label>
+    <label><input type="radio" name="satisfaction" value="5"> Slightly satisfied</label>
+    <label><input type="radio" name="satisfaction" value="6"> Satisfied</label>
+    <label><input type="radio" name="satisfaction" value="7"> Very satisfied</label>
+    </div>
+</div>
+
+
+    <!-- Hidden fields for Venn coordinates -->
+    <input type="hidden" id="diagramA_x" name="diagramA_x" />
+    <input type="hidden" id="diagramA_y" name="diagramA_y" />
+    <input type="hidden" id="diagramB_x" name="diagramB_x" />
+    <input type="hidden" id="diagramB_y" name="diagramB_y" />
+
+    <div>
+      <h3>Based on what you wanted from the BASc before joining, click anywhere on this diagram.</h3>
+      <p class="hint">
+        Interdisciplinary = multiple and varied disciplines of knowledge
+        <br>
+        Problems = relating to real-world issues of genuine personal interest and importance
+        <br>
+        Methods = research and production techniques extracted from disciplines and applied beyond disciplinary borders</p>
+      <div class="canvas-wrapper">
+        <canvas id="diagramA" width="600" height="600"></canvas>
+      </div>
+    </div>
+
+    <div>
+      <h3>Based on what you have been taught in the BASc, click anywhere on this diagram.</h3>
+      <p class="hint">
+        Interdisciplinary = multiple and varied disciplines of knowledge
+        <br>
+        Problems = relating to real-world issues of genuine personal interest and importance
+        <br>
+        Methods = research and production techniques extracted from disciplines and applied beyond disciplinary borders</p>
+      <div class="canvas-wrapper">
+        <canvas id="diagramB" width="600" height="600"></canvas>
+      </div>
+    </div>
+
+    <button type="submit">Submit</button>
+  </form>
+
+  <script>
+    // Load images onto canvases and handle clicks
+    function setupDiagram(canvasId, imgSrc, hiddenXId, hiddenYId) {
+      const canvas = document.getElementById(canvasId);
+      const ctx = canvas.getContext("2d");
+      const img = new Image();
+      img.src = imgSrc;
+
+      img.onload = () => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      };
+
+      canvas.addEventListener("click", (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        // Update hidden input fields so Netlify saves them
+        document.getElementById(hiddenXId).value = x.toFixed(2);
+        document.getElementById(hiddenYId).value = y.toFixed(2);
+
+        // Redraw background and marker
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        ctx.beginPath();
+        ctx.arc(x, y, 7, 0, 2 * Math.PI);
+        ctx.fillStyle = "red";
+        ctx.fill();
+      });
+    }
+
+    // Initialise both diagrams
+    setupDiagram("diagramA", "venndiagram.png", "diagramA_x", "diagramA_y");
+    setupDiagram("diagramB", "venndiagram.png", "diagramB_x", "diagramB_y");
+  </script>
+</body>
+</html>
